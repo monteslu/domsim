@@ -209,16 +209,16 @@ function takeTurn(p) {
     <strong>${p.name}</strong> player
   </div>
   <div>
-  starting hand : <strong>${startingHand.map(c => c.name)}</strong>
+  starting hand : <strong>${startingHand.map(c => c.name).join(', ')}</strong>
   </div>
   <div>
-  played : <strong>${finalInPlay.map(c => c.name)}</strong>
+  played : <strong>${finalInPlay.map(c => c.name).join(', ')}</strong>
   </div>
   <div>
   after actions : <strong>${highTreasure}</strong> treasure, <strong>${highBuys}</strong> buys
   </div>
   <div>
-  purchased : <strong>${boughtThisRound.map(c => c.name)}</strong>
+  purchased : <strong>${boughtThisRound.map(c => c.name).join(', ')}</strong>
   </div>
   <hr/>
   `;
