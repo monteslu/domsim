@@ -8,6 +8,9 @@ import {
   sortBy,
   reverse,
   sample,
+  countBy,
+  map,
+  fill,
 } from 'lodash';
 
 import cardDefs from './cards';
@@ -48,7 +51,7 @@ function fromSupply(name) {
 }
 
 function initPlayers() {
-  players = shuffle(['treasure', 'action', 'card', 'random'].map((name) => {
+  players = shuffle(['treasure', 'action', 'card', 'victory'].map((name) => {
     // console.log('name', name);
     const p = cloneDeep(basePlayer);
     p.deck = times(3, () => fromSupply('estate')).concat(times(7, () => fromSupply('copper')));
@@ -202,25 +205,25 @@ function takeTurn(p) {
   finalInPlay = finalInPlay.concat(p.inPlay);
 
   const output = `
-  <div>
-    turn <strong>${turns}</strong>
-  </div>
-  <div>
-    <strong>${p.name}</strong> player
-  </div>
-  <div>
-  starting hand : <strong>${startingHand.map(c => c.name).join(', ')}</strong>
-  </div>
-  <div>
-  played : <strong>${finalInPlay.map(c => c.name).join(', ')}</strong>
-  </div>
-  <div>
-  after actions : <strong>${highTreasure}</strong> treasure, <strong>${highBuys}</strong> buys
-  </div>
-  <div>
-  purchased : <strong>${boughtThisRound.map(c => c.name).join(', ')}</strong>
-  </div>
-  <hr/>
+    <div>
+      turn <strong>${turns}</strong>
+    </div>
+    <div>
+      <strong>${p.name}</strong> player
+    </div>
+    <div>
+    starting hand : <strong>${startingHand.map(c => c.name).join(', ')}</strong>
+    </div>
+    <div>
+    played : <strong>${finalInPlay.map(c => c.name).join(', ')}</strong>
+    </div>
+    <div>
+    after actions : <strong>${highTreasure}</strong> treasure, <strong>${highBuys}</strong> buys
+    </div>
+    <div>
+    purchased : <strong>${boughtThisRound.map(c => c.name).join(', ')}</strong>
+    </div>
+    <hr/>
   `;
   const div = document.createElement('div');
   div.innerHTML = output;
@@ -267,17 +270,54 @@ function runSim() {
 
   console.log(players, sortBy(supply, 'name'), filter(supply, { qty: 0 }));
   sortBy(players, 'victory').forEach(p => console.log(p.victory, p.name));
-  const div = document.createElement('div');
-  div.innerHTML = `
+  const supplyDiv = document.createElement('div');
+  const supplyRows = fill(Array(8), 0);
+  console.log('supplyRows', JSON.stringify(supplyRows));
+  supply.forEach((c, idx) => {
+    const row = idx % 8;
+    const column = idx % 2;
+    supplyRows[row] = supplyRows[row] || [];
+    console.log(idx, row, column, c.name);
+    // supplyRows[row][column] = c.name; //cloneDeep(c);
+    supplyRows[row].push(c);
+    // console.log(c.name, idx);
+  });
+  console.log('supplyRows', supplyRows);
+  supplyDiv.innerHTML = `
+  <table class="mdl-data-table mdl-data-table--selectable mdl-shadow--2dp">
+    <tbody>
+      ${supplyRows.map(sr => `
+        <tr>
+          <td class="mdl-data-table__cell--non-numeric">${sr[0].cost} - ${sr[0].name}<br/><span class="${sr[0].qty === 0 ? 'emptyStack' : ''}">${sr[0].qty}</span></td>
+          <td class="mdl-data-table__cell--non-numeric">${sr[1].cost} - ${sr[1].name}<br/><span class="${sr[1].qty === 0 ? 'emptyStack' : ''}">${sr[1].qty}</span></td>
+        </tr>
+      `).join('')}
+    </tbody>
+    </table>
+  `;
+  outputDiv.appendChild(supplyDiv);
+
+  const scoreDiv = document.createElement('div');
+  scoreDiv.className = 'mdl-card mdl-shadow--2dp';
+  scoreDiv.style.width = '100%';
+  scoreDiv.style.marginTop = '5px';
+  scoreDiv.innerHTML = `
     <div>
+      <h3>Results</h3>
       <ul>
-      ${sortBy(players, 'victory').map(p => `
-        <li>VPs: <strong>${p.victory}</strong> player strategy: <strong>${p.name}</strong></li>
+      ${reverse(sortBy(players, 'victory')).map(p => `
+        <li>
+        VPs: <span style="font-size: 2em; font-weight: bold;">${p.victory}</span> player strategy: <span style="font-size: 1.5em; font-weight: bold;">${p.name}</span>
+        <br/>
+          <strong>${p.discard.length}</strong> card deck:<br/>
+          ${map(countBy(p.discard, c => c.name), (val, key) => `<strong>${val}x</strong> ${key}`).join(', ')}
+        <br/><br/>
+        </li>
       `).join('')}
       </ul>
     </div>
   `;
-  outputDiv.appendChild(div);
+  outputDiv.appendChild(scoreDiv);
   window.scrollTo(0, document.body.scrollHeight);
 }
 
